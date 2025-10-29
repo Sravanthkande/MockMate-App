@@ -4,7 +4,8 @@ An AI-powered mock interview platform built with Next.js 15 and Google Gemini AI
 
 ## Features
 
-- 🤖 **AI-Powered Interviews**: Realistic mock interviews using Google Gemini 2.5 Flash
+- 🤖 **AI-Powered Interviews**: Realistic mock interviews using Google Gemini 2.0 Flash
+- 🎤 **Voice Input**: Record your answers using the microphone - audio is automatically transcribed to text
 - 💼 **Role-Based Questions**: Customizable interview experience for different job positions
 - 💬 **Interactive Chat Interface**: Real-time conversation with structured feedback
 - 📊 **Instant Feedback**: Get constructive feedback on your answers

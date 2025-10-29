@@ -17,14 +17,20 @@ const ChatWindow = React.memo(({ history, role }) => {
           <p>The interview hasn't started yet. Set the role and begin!</p>
         </div>
       ) : (
-        history.map((msg, index) => (
-          <ChatBubble 
-            key={index} 
-            message={msg.parts[0].text} 
-            isUser={msg.role === 'user'} 
-            role={role}
-          />
-        ))
+        history.map((msg, index) => {
+          // Handle both text and audio messages
+          const part = msg.parts[0];
+          const messageText = part.text || (part.inline_data ? '🎤 Audio message' : 'No content');
+
+          return (
+            <ChatBubble
+              key={index}
+              message={messageText}
+              isUser={msg.role === 'user'}
+              role={role}
+            />
+          );
+        })
       )}
       <div ref={chatEndRef} />
     </div>

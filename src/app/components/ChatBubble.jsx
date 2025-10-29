@@ -1,13 +1,16 @@
 import React from 'react';
 
 const ChatBubble = ({ message, isUser, role }) => {
+  // Ensure message is a string
+  const messageText = typeof message === 'string' ? message : String(message || '');
+
   // Split the AI response into feedback and next question sections for clean display
   const isAI = !isUser;
-  const feedbackMatch = message.match(/Feedback:([\s\S]*?)Next Question:/i);
-  const nextQuestionMatch = message.match(/Next Question:([\s\S]*)/i);
+  const feedbackMatch = messageText.match(/Feedback:([\s\S]*?)Next Question:/i);
+  const nextQuestionMatch = messageText.match(/Next Question:([\s\S]*)/i);
 
   const feedback = feedbackMatch ? feedbackMatch[1].trim() : (isAI ? "Processing feedback..." : null);
-  const nextQuestion = nextQuestionMatch ? nextQuestionMatch[1].trim() : (isAI ? message.replace(/Feedback:[\s\S]*?/i, '').trim() : null);
+  const nextQuestion = nextQuestionMatch ? nextQuestionMatch[1].trim() : (isAI ? messageText.replace(/Feedback:[\s\S]*?/i, '').trim() : null);
   
   // Define primary color for Tailwind utility classes (mocked here, typically in tailwind.config.js)
   const primaryColor = 'blue'; 
@@ -25,7 +28,7 @@ const ChatBubble = ({ message, isUser, role }) => {
         
         {isUser ? (
           // User message
-          <p className="whitespace-pre-wrap">{message}</p>
+          <p className="whitespace-pre-wrap">{messageText}</p>
         ) : (
           // AI message (split into feedback and question)
           <div className="space-y-3">
@@ -41,7 +44,7 @@ const ChatBubble = ({ message, isUser, role }) => {
                 <p className="text-md font-medium pt-1">{nextQuestion}</p>
               </div>
             )}
-            {!feedback && !nextQuestion && <p>{message}</p>}
+            {!feedback && !nextQuestion && <p>{messageText}</p>}
           </div>
         )}
       </div>

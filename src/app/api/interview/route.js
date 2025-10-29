@@ -23,6 +23,7 @@ const getSystemInstruction = (role) => {
 
 /**
  * POST handler for starting/continuing the interview.
+ * Supports both text and audio input/output
  * @param {Request} request The incoming Next.js request object.
  */
 export async function POST(request) {
@@ -31,7 +32,7 @@ export async function POST(request) {
   }
 
   try {
-    const { history, role } = await request.json();
+    const { history, role, audioMode, audioData, mimeType } = await request.json();
 
     if (!role || !Array.isArray(history)) {
       return NextResponse.json({
@@ -72,6 +73,21 @@ export async function POST(request) {
       ]
     };
 
+    // If audio input is provided, add it to the last message
+    if (audioData && history.length > 0) {
+      const lastMessage = history[history.length - 1];
+      if (lastMessage.role === 'user') {
+        lastMessage.parts = [
+          {
+            inline_data: {
+              mime_type: mimeType || 'audio/webm',
+              data: audioData
+            }
+          }
+        ];
+      }
+    }
+
     console.log("Sending request to Gemini API...");
     const geminiResponse = await fetch(`${API_URL}?key=${API_KEY}`, {
       method: 'POST',
@@ -104,7 +120,11 @@ export async function POST(request) {
         }, { status: 500 });
     }
 
-    return NextResponse.json({ text: generatedText });
+    // Return text and indicate if audio mode is enabled (client will handle TTS)
+    return NextResponse.json({
+      text: generatedText,
+      shouldSpeak: audioMode // Tell client to speak the response
+    });
 
   } catch (error) {
     console.error("Error processing interview request:", error);
