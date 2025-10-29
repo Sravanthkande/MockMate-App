@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import ChatBubble from './ChatBubble.jsx'; // Explicitly set the file extension
+import ChatBubble from './ChatBubble';
 
 const ChatWindow = React.memo(({ history, role }) => {
   const chatEndRef = useRef(null);

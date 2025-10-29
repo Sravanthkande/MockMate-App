@@ -1,12 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Use the App Router officially introduced in Next.js 13
-  experimental: {
-    appDir: true,
-  },
-  // Allows you to use images from specific external domains (if needed)
+  // App Router is now stable in Next.js 13+ and default in Next.js 15
   images: {
-    domains: [], 
+    remotePatterns: [], // Use remotePatterns instead of domains (deprecated)
   },
 };
 

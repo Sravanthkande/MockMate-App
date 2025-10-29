@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 
-// NOTE: In a real Next.js app, API_KEY would be loaded securely from process.env.GEMINI_API_KEY
-// For this demo, we mock it.
-const API_KEY = process.env.GEMINI_API_KEY || ""; 
-const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+const API_KEY = process.env.GEMINI_API_KEY || "";
+// Using Gemini 2.0 Flash - stable and fast model
+const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
 /**
  * Mocks the system instruction logic (equivalent of gemini.js payload builder)
@@ -33,14 +32,47 @@ export async function POST(request) {
 
   try {
     const { history, role } = await request.json();
-    
+
+    if (!role || !Array.isArray(history)) {
+      return NextResponse.json({
+        error: "Invalid request: role and history are required"
+      }, { status: 400 });
+    }
+
     // Construct the payload for the Gemini API call
     const payload = {
-      contents: history,
+      contents: history.length > 0 ? history : [{
+        role: 'user',
+        parts: [{ text: 'Start the interview' }]
+      }],
       systemInstruction: getSystemInstruction(role),
+      generationConfig: {
+        temperature: 0.7,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        }
+      ]
     };
 
-    // Retry logic (Exponential Backoff - simplified for this demo)
+    console.log("Sending request to Gemini API...");
     const geminiResponse = await fetch(`${API_URL}?key=${API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -48,22 +80,36 @@ export async function POST(request) {
     });
 
     if (!geminiResponse.ok) {
-        // Log status for debugging on the server
-        console.error("Gemini API returned an error status:", geminiResponse.status);
-        throw new Error(`Gemini API error: ${geminiResponse.statusText}`);
+        const errorData = await geminiResponse.json().catch(() => ({}));
+        console.error("Gemini API Error:", {
+          status: geminiResponse.status,
+          statusText: geminiResponse.statusText,
+          error: errorData
+        });
+
+        return NextResponse.json({
+          error: `Gemini API error: ${errorData.error?.message || geminiResponse.statusText}`
+        }, { status: geminiResponse.status });
     }
 
     const result = await geminiResponse.json();
+    console.log("Gemini API Response:", JSON.stringify(result, null, 2));
+
     const generatedText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!generatedText) {
-         return NextResponse.json({ error: "AI did not generate a valid response." }, { status: 500 });
+        console.error("No text generated. Full response:", result);
+        return NextResponse.json({
+          error: "AI did not generate a valid response. Please try again."
+        }, { status: 500 });
     }
 
     return NextResponse.json({ text: generatedText });
 
   } catch (error) {
     console.error("Error processing interview request:", error);
-    return NextResponse.json({ error: "Internal Server Error during AI processing." }, { status: 500 });
+    return NextResponse.json({
+      error: `Internal Server Error: ${error.message}`
+    }, { status: 500 });
   }
 }
